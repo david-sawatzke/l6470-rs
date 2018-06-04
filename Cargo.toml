@@ -1,0 +1,16 @@
+[package]
+authors = ["samuel"]
+name = "linux_l6470"
+version = "0.1.0"
+
+[dependencies]
+spidev = "0.3"
+sysfs_gpio = "0.5.3"
+
+[lib]
+name = "linux_l6470"
+path = "src/lib.rs"
+
+[[bin]]
+name = "l6570"
+path = "src/bin/main.rs"
