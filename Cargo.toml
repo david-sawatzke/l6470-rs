@@ -1,16 +1,26 @@
 [package]
-authors = ["samuel"]
+authors = ["samuel@dolt.ch"]
 name = "linux_l6470"
 version = "0.1.0"
+
+description = "ST L6470 SPI driver for Embedded Linux"
+readme = "README.md"
+
+license = "MIT OR Apache-2.0"
+categories = ["embedded"]
+keywords = ["L6470", "stepper", "motor",  "embedded"]
+maintenance = { status = "experimental"}
+homepage = "https://bitbucket.org/doltch/linux-l6470-rs"
+repository = "https://bitbucket.org/doltch/linux-l6470-rs"
+
+exclude = [
+ ".idea/*"
+]
 
 [dependencies]
 spidev = "0.3"
 sysfs_gpio = "0.5.3"
+bitflags = "1.0"
+byteorder = "1.2"
 
-[lib]
-name = "linux_l6470"
-path = "src/lib.rs"
 
-[[bin]]
-name = "l6570"
-path = "src/bin/main.rs"

@@ -2,9 +2,6 @@
 
 This library can be used to control one or more STMicroelectronics L6470 motor driver over SPI using the Rust programming language.
 
-## Getting Started
-
-cargo add L6470
 
 ### Prerequisites
 
@@ -19,67 +16,43 @@ A step by step series of examples that tell you how to get a development env run
 
 Say what the step will be
 
-```
+```rust
 extern crate linux_l6470;
 
 use linux_l6470::L6470;
+use linux_l6470::Motors;
+use linux_l6470::Direction;
 
-fn main() {
-    let motors = L6470::new("/dev/spi")
-         .with_daisy_chain_length(4)
-         .build()
+fn main() -> Result<(), std::io::Error> {
 
-    
+    let driver = linux_l6470::L6470Connector::new("/dev/spidev1.0")
+        .build()?;
 
+
+
+
+    driver.init();
+
+    driver.send_run(Motors::all(), Direction::CW, 0xFFFFFFFF);
+    // driver.send_go_until(Motors::all(), Direction::CW, 0xFFFFFFFF);
+
+    Ok(())
 }
 ```
-
-And repeat
-
-```
-until finished
-```
-
-End with an example of getting some data out of the system or using it for a little demo
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system
 
 ## Built With
 
 * [Rust Spidev](https://github.com/rust-embedded/rust-spidev) - Linux SPI API with Rust
-* [Rust Sysfs GPIO](https://github.com/rust-embedded/rust-sysfs-gpio) - Linux GPIO API with Rust
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
+We use [SemVer](http://semver.org/) for versioning.
+
 
 ## Authors
 
 * **Dolt.ch (Samuel Dolt)** - *Initial work* - [Dolt.ch](https://dolt.ch)
 
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
 
 ## License
 
@@ -90,21 +63,11 @@ This project is Licensed under either of
 
 at your option.
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
 ## Contribution
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
 
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any
 additional terms or conditions.
-
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
 
 ## Bibliography
 
