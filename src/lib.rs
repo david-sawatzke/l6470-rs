@@ -85,11 +85,11 @@ impl L6470{
     }
 
     pub fn set_speed_profile(&self, motors: Motors, acc: u32, dec: u32, max_speed: u32, min_speed: u32){
-        self.write_register(Motors::all(), &register::ACC, acc);
-        self.write_register( Motors::all(), &register::DEC, dec);
-        self.write_register(Motors::all(), &register::MAX_SPEED, max_speed);
+        self.write_register(motors, &register::ACC, acc);
+        self.write_register( motors, &register::DEC, dec);
+        self.write_register(motors, &register::MAX_SPEED, max_speed);
 
-        self.write_register( Motors::all(), &register::MIN_SPEED, min_speed);
+        self.write_register( motors, &register::MIN_SPEED, min_speed);
     }
 
     pub fn get_status(&self, motors: Motors){
