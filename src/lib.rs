@@ -84,6 +84,14 @@ impl L6470{
 
     }
 
+    pub fn set_speed_profile(&self, motors: Motors, acc: u32, dec: u32, max_speed: u32, min_speed: u32){
+        self.write_register(Motors::all(), &register::ACC, acc);
+        self.write_register( Motors::all(), &register::DEC, dec);
+        self.write_register(Motors::all(), &register::MAX_SPEED, max_speed);
+
+        self.write_register( Motors::all(), &register::MIN_SPEED, min_speed);
+    }
+
     pub fn get_status(&self, motors: Motors){
         self.send_byte(motors, 0xD0);
 
@@ -91,6 +99,81 @@ impl L6470{
         self.send_byte(motors, 0xFF);
         self.send_byte(motors, 0xFF);
 
+    }
+
+    pub fn send_move(&self, motors: Motors, dir: Direction, step: u32){
+        let mut command = 0x40u8;
+
+        if dir == Direction::CW {
+            command += 1;
+        }
+        self.send_byte(motors, command );
+
+        let mut buf= [0;4];
+        BigEndian::write_u32(&mut buf, step);
+
+        // Send the three LSB
+        self.send_byte(motors, buf[1] );
+        self.send_byte(motors, buf[2] );
+        self.send_byte(motors, buf[3] );
+    }
+
+    pub fn send_goto(&self, motors: Motors,  pos: u32){
+        let mut command = 0x60u8;
+
+        self.send_byte(motors, command );
+
+        let mut buf= [0;4];
+        BigEndian::write_u32(&mut buf, pos);
+
+        // Send the three LSB
+        self.send_byte(motors, buf[1] );
+        self.send_byte(motors, buf[2] );
+        self.send_byte(motors, buf[3] );
+    }
+
+    pub fn send_soft_stop(&self, motors: Motors){
+        let mut command = 0xB0u8;
+
+        self.send_byte(motors, command );
+    }
+
+    pub fn send_hard_stop(&self, motors: Motors){
+        let mut command = 0xB8u8;
+
+        self.send_byte(motors, command );
+    }
+
+
+    pub fn send_soft_hiz(&self, motors: Motors){
+        let mut command = 0xA0u8;
+
+        self.send_byte(motors, command );
+    }
+
+    pub fn send_hard_hiz(&self, motors: Motors){
+        let mut command = 0xA8u8;
+
+        self.send_byte(motors, command );
+    }
+
+
+    pub fn send_goto_dir(&self, motors: Motors, dir: Direction, pos: u32){
+        let mut command = 0x68u8;
+
+        if dir == Direction::CW {
+            command += 1;
+        }
+
+        self.send_byte(motors, command );
+
+        let mut buf= [0;4];
+        BigEndian::write_u32(&mut buf, pos);
+
+        // Send the three LSB
+        self.send_byte(motors, buf[1] );
+        self.send_byte(motors, buf[2] );
+        self.send_byte(motors, buf[3] );
     }
 
     pub fn send_run(&self, motors: Motors, dir: Direction, speed: u32){

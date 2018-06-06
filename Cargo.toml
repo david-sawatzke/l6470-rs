@@ -1,7 +1,7 @@
 [package]
 authors = ["samuel@dolt.ch"]
 name = "linux_l6470"
-version = "0.1.0"
+version = "0.1.1"
 
 description = "ST L6470 SPI driver for Embedded Linux"
 readme = "README.md"
