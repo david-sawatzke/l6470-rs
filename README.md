@@ -1,3 +1,5 @@
+[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](http://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus.org/#wip)
+
 # L6470 driver for Linux in Rust
 
 This library can be used to control one or more STMicroelectronics L6470 motor driver over SPI using the Rust programming language.
