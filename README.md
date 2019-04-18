@@ -1,16 +1,8 @@
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](http://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus.org/#wip)
 
-# L6470 driver for Linux in Rust
+# L6470 driver for embedded-hal traits in Rust
 
 This library can be used to control one or more STMicroelectronics L6470 motor driver over SPI using the Rust programming language.
-
-
-### Prerequisites
-
-You need a Linux Single Board Computer (SBC) with a SPI port enabled and some GPIO
-
-See [Linux SPIDEV doc](https://www.kernel.org/doc/Documentation/spi/spidev)
-See [Linux Sysfs GPIO doc](https://www.kernel.org/doc/Documentation/gpio/sysfs.txt)
 
 ### Installing
 
@@ -19,15 +11,9 @@ A step by step series of examples that tell you how to get a development env run
 Say what the step will be
 
 ```rust
-extern crate linux_l6470;
-
-use linux_l6470::L6470;
-use linux_l6470::Motors;
-use linux_l6470::Direction;
-
 fn main() -> Result<(), std::io::Error> {
 
-    let driver = linux_l6470::L6470Connector::new("/dev/spidev1.0")
+    let driver = L6470Connector::new(spi)
         .build()?;
 
 
@@ -41,20 +27,6 @@ fn main() -> Result<(), std::io::Error> {
     Ok(())
 }
 ```
-
-## Built With
-
-* [Rust Spidev](https://github.com/rust-embedded/rust-spidev) - Linux SPI API with Rust
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning.
-
-
-## Authors
-
-* **Dolt.ch (Samuel Dolt)** - *Initial work* - [Dolt.ch](https://dolt.ch)
-
 
 ## License
 
