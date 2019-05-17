@@ -28,8 +28,9 @@ pub enum Direction {
     CCW,
 }
 
-pub struct L6470<SPI> {
+pub struct L6470<SPI, CS> {
     spi: SPI,
+    cs: CS,
     daisy_chain: u8,
 }
 
@@ -46,9 +47,10 @@ bitflags! {
     }
 }
 
-impl<SPI, E> L6470<SPI>
+impl<SPI, E, CS> L6470<SPI, CS>
 where
     SPI: embedded_hal::spi::FullDuplex<u8, Error = E>,
+    CS: embedded_hal::digital::OutputPin,
 {
     pub fn init(&mut self) {
         self.resync_com();
@@ -91,14 +93,17 @@ where
     }
 
     pub fn get_status(&mut self, motors: Motors) {
+        self.cs.set_low();
         self.send_byte(motors, 0xD0);
 
         // Rend two byte
         self.send_byte(motors, 0xFF);
         self.send_byte(motors, 0xFF);
+        self.cs.set_high();
     }
 
     pub fn send_move(&mut self, motors: Motors, dir: Direction, step: u32) {
+        self.cs.set_low();
         let mut command = 0x40u8;
 
         if dir == Direction::CW {
@@ -113,9 +118,11 @@ where
         self.send_byte(motors, buf[1]);
         self.send_byte(motors, buf[2]);
         self.send_byte(motors, buf[3]);
+        self.cs.set_high();
     }
 
     pub fn send_goto(&mut self, motors: Motors, pos: u32) {
+        self.cs.set_low();
         let command = 0x60u8;
 
         self.send_byte(motors, command);
@@ -127,33 +134,43 @@ where
         self.send_byte(motors, buf[1]);
         self.send_byte(motors, buf[2]);
         self.send_byte(motors, buf[3]);
+        self.cs.set_high();
     }
 
     pub fn send_soft_stop(&mut self, motors: Motors) {
+        self.cs.set_low();
         let command = 0xB0u8;
 
         self.send_byte(motors, command);
+        self.cs.set_high();
     }
 
     pub fn send_hard_stop(&mut self, motors: Motors) {
+        self.cs.set_low();
         let command = 0xB8u8;
 
         self.send_byte(motors, command);
+        self.cs.set_high();
     }
 
     pub fn send_soft_hiz(&mut self, motors: Motors) {
+        self.cs.set_low();
         let command = 0xA0u8;
 
         self.send_byte(motors, command);
+        self.cs.set_high();
     }
 
     pub fn send_hard_hiz(&mut self, motors: Motors) {
+        self.cs.set_low();
         let command = 0xA8u8;
 
         self.send_byte(motors, command);
+        self.cs.set_high();
     }
 
     pub fn send_goto_dir(&mut self, motors: Motors, dir: Direction, pos: u32) {
+        self.cs.set_low();
         let mut command = 0x68u8;
 
         if dir == Direction::CW {
@@ -169,9 +186,11 @@ where
         self.send_byte(motors, buf[1]);
         self.send_byte(motors, buf[2]);
         self.send_byte(motors, buf[3]);
+        self.cs.set_high();
     }
 
     pub fn send_run(&mut self, motors: Motors, dir: Direction, speed: u32) {
+        self.cs.set_low();
         let mut command = 0x50u8;
 
         if dir == Direction::CW {
@@ -186,9 +205,11 @@ where
         self.send_byte(motors, buf[1]);
         self.send_byte(motors, buf[2]);
         self.send_byte(motors, buf[3]);
+        self.cs.set_high();
     }
 
     pub fn send_go_until(&mut self, motors: Motors, dir: Direction, speed: u32) {
+        self.cs.set_low();
         let mut command = 0b10001010;
 
         if dir == Direction::CW {
@@ -204,14 +225,18 @@ where
         self.send_byte(motors, buf[1]);
         self.send_byte(motors, buf[2]);
         self.send_byte(motors, buf[3]);
+        self.cs.set_high();
     }
 
     pub fn send_reset(&mut self, motors: Motors) {
+        self.cs.set_low();
         self.send_byte(motors, 0xC0);
         // TODO 1 second delay
+        self.cs.set_high();
     }
 
     pub fn resync_com(&mut self) {
+        self.cs.set_low();
         // Some commande can take 1, 2, 3 or even 4 byte
         // In case of communication failure, some L6470 can be out of sync
 
@@ -220,6 +245,7 @@ where
         self.send_byte(Motors::all(), 0x00);
         self.send_byte(Motors::all(), 0x00);
         self.send_byte(Motors::all(), 0x00);
+        self.cs.set_high();
     }
 
     /// Change step mode
@@ -257,6 +283,7 @@ where
     }
 
     pub fn write_register(&mut self, motors: Motors, reg: &Register, value: u32) {
+        self.cs.set_low();
         self.send_byte(motors, 0x00 | reg.address);
 
         let mut buf = [0; 4];
@@ -288,6 +315,7 @@ where
             }
             _ => unreachable!(),
         }
+        self.cs.set_high();
     }
 
     /*
@@ -307,28 +335,33 @@ where
 }
 
 /// A connector to on or more L6470
-pub struct L6470Connector<SPI> {
+pub struct L6470Connector<SPI, CS> {
     spi_bus: SPI,
+    cs: CS,
     daisy_chain: u8,
 }
 
-impl<SPI> L6470Connector<SPI>
+impl<SPI, CS> L6470Connector<SPI, CS>
 where
     SPI: embedded_hal::spi::FullDuplex<u8>,
+    CS: embedded_hal::digital::OutputPin,
 {
     /// Returns a new connectors
     ///
     /// 5 MHz max
-    pub fn new(spi: SPI) -> Self {
+    pub fn new(spi: SPI, cs: CS) -> Self {
         L6470Connector {
             spi_bus: spi,
+            cs,
             daisy_chain: 2,
         }
     }
 
-    pub fn build(self) -> Result<L6470<SPI>, ()> {
+    pub fn build(mut self) -> Result<L6470<SPI, CS>, ()> {
+        self.cs.set_high();
         Ok(L6470 {
             spi: self.spi_bus,
+            cs: self.cs,
             daisy_chain: self.daisy_chain,
         })
     }
