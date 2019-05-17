@@ -3,11 +3,18 @@
 use bitflags::bitflags;
 use byteorder::{BigEndian, ByteOrder};
 use embedded_hal;
+use embedded_hal::spi::{Mode, Phase, Polarity};
 use nb::block;
 
 pub mod register;
 
 pub use register::Register;
+
+/// SPI mode that can be used for this crate
+pub const MODE: Mode = Mode {
+    polarity: Polarity::IdleHigh,
+    phase: Phase::CaptureOnSecondTransition,
+};
 
 bitflags! {
     pub struct Motors: u8 {
