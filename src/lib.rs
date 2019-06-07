@@ -1,3 +1,6 @@
+//! #Documents
+//!
+//! General description of protocol https://www.st.com/content/ccc/resource/technical/document/application_note/d7/dd/a8/f3/db/3e/49/6f/DM00082126.pdf/files/DM00082126.pdf/jcr:content/translations/en.DM00082126.pdf
 #![no_std]
 
 use bitflags::bitflags;
@@ -100,17 +103,14 @@ where
     }
 
     pub fn get_status(&mut self, motors: Motors) {
-        self.cs.set_low();
         self.send_byte(motors, 0xD0);
 
         // Rend two byte
         self.send_byte(motors, 0xFF);
         self.send_byte(motors, 0xFF);
-        self.cs.set_high();
     }
 
     pub fn send_move(&mut self, motors: Motors, dir: Direction, step: u32) {
-        self.cs.set_low();
         let mut command = 0x40u8;
 
         if dir == Direction::CW {
@@ -125,11 +125,9 @@ where
         self.send_byte(motors, buf[1]);
         self.send_byte(motors, buf[2]);
         self.send_byte(motors, buf[3]);
-        self.cs.set_high();
     }
 
     pub fn send_goto(&mut self, motors: Motors, pos: u32) {
-        self.cs.set_low();
         let command = 0x60u8;
 
         self.send_byte(motors, command);
@@ -141,43 +139,33 @@ where
         self.send_byte(motors, buf[1]);
         self.send_byte(motors, buf[2]);
         self.send_byte(motors, buf[3]);
-        self.cs.set_high();
     }
 
     pub fn send_soft_stop(&mut self, motors: Motors) {
-        self.cs.set_low();
         let command = 0xB0u8;
 
         self.send_byte(motors, command);
-        self.cs.set_high();
     }
 
     pub fn send_hard_stop(&mut self, motors: Motors) {
-        self.cs.set_low();
         let command = 0xB8u8;
 
         self.send_byte(motors, command);
-        self.cs.set_high();
     }
 
     pub fn send_soft_hiz(&mut self, motors: Motors) {
-        self.cs.set_low();
         let command = 0xA0u8;
 
         self.send_byte(motors, command);
-        self.cs.set_high();
     }
 
     pub fn send_hard_hiz(&mut self, motors: Motors) {
-        self.cs.set_low();
         let command = 0xA8u8;
 
         self.send_byte(motors, command);
-        self.cs.set_high();
     }
 
     pub fn send_goto_dir(&mut self, motors: Motors, dir: Direction, pos: u32) {
-        self.cs.set_low();
         let mut command = 0x68u8;
 
         if dir == Direction::CW {
@@ -193,11 +181,9 @@ where
         self.send_byte(motors, buf[1]);
         self.send_byte(motors, buf[2]);
         self.send_byte(motors, buf[3]);
-        self.cs.set_high();
     }
 
     pub fn send_run(&mut self, motors: Motors, dir: Direction, speed: u32) {
-        self.cs.set_low();
         let mut command = 0x50u8;
 
         if dir == Direction::CW {
@@ -212,11 +198,9 @@ where
         self.send_byte(motors, buf[1]);
         self.send_byte(motors, buf[2]);
         self.send_byte(motors, buf[3]);
-        self.cs.set_high();
     }
 
     pub fn send_go_until(&mut self, motors: Motors, dir: Direction, speed: u32) {
-        self.cs.set_low();
         let mut command = 0b10001010;
 
         if dir == Direction::CW {
@@ -232,18 +216,14 @@ where
         self.send_byte(motors, buf[1]);
         self.send_byte(motors, buf[2]);
         self.send_byte(motors, buf[3]);
-        self.cs.set_high();
     }
 
     pub fn send_reset(&mut self, motors: Motors) {
-        self.cs.set_low();
         self.send_byte(motors, 0xC0);
         // TODO 1 second delay
-        self.cs.set_high();
     }
 
     pub fn resync_com(&mut self) {
-        self.cs.set_low();
         // Some commande can take 1, 2, 3 or even 4 byte
         // In case of communication failure, some L6470 can be out of sync
 
@@ -252,7 +232,6 @@ where
         self.send_byte(Motors::all(), 0x00);
         self.send_byte(Motors::all(), 0x00);
         self.send_byte(Motors::all(), 0x00);
-        self.cs.set_high();
     }
 
     /// Change step mode
@@ -270,6 +249,7 @@ where
     }
 
     pub fn send_byte(&mut self, motors: Motors, byte: u8) {
+        self.cs.set_low();
         let mut buf = [0, 8];
 
         if self.daisy_chain >= 8 {
@@ -287,10 +267,33 @@ where
         self.transfer(&mut buf[0..self.daisy_chain as usize])
             .map_err(|_| ())
             .unwrap();
+        self.cs.set_high();
+    }
+
+    pub fn read_byte(&mut self, motors: Motors) -> u8 {
+        self.cs.set_low();
+        let mut buf = [0, 8]; // 0 is NOP command
+
+        if self.daisy_chain >= 8 {
+            unimplemented!();
+        }
+
+        self.transfer(&mut buf[0..self.daisy_chain as usize])
+            .map_err(|_| ())
+            .unwrap();
+
+        let mut data = 0;
+        for i in 0..self.daisy_chain {
+            if motors.bits & (1 << i) != 0 {
+                data = buf[i as usize];
+                break;
+            }
+        }
+        self.cs.set_high();
+        data
     }
 
     pub fn write_register(&mut self, motors: Motors, reg: &Register, value: u32) {
-        self.cs.set_low();
         self.send_byte(motors, 0x00 | reg.address);
 
         let mut buf = [0; 4];
@@ -322,7 +325,39 @@ where
             }
             _ => unreachable!(),
         }
-        self.cs.set_high();
+    }
+
+    pub fn read_register(&mut self, motors: Motors, reg: &Register) -> u32 {
+        self.send_byte(motors, 0x20 | reg.address);
+
+        let mut buf = [0; 4];
+
+        // We check len_bit to choose between 1, 2 and 3 bytes register
+        let buf_size = match reg.len_bit {
+            1..=8 => 1,
+            9..=16 => 2,
+            17..=24 => 3,
+            _ => unreachable!(),
+        };
+
+        // Parameters need to be sended in MSB order, with 1, 2 or 3 bytes
+        // We need to reorder a bit when we only have to save 1 or 2 bytes.
+        match buf_size {
+            1 => {
+                buf[3] = self.read_byte(motors);
+            }
+            2 => {
+                buf[2] = self.read_byte(motors);
+                buf[3] = self.read_byte(motors);
+            }
+            3 => {
+                buf[1] = self.read_byte(motors);
+                buf[3] = self.read_byte(motors);
+                buf[3] = self.read_byte(motors);
+            }
+            _ => unreachable!(),
+        };
+        BigEndian::read_u32(&mut buf)
     }
 
     /*
