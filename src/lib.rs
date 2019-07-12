@@ -391,11 +391,11 @@ where
     /// Returns a new connectors
     ///
     /// 5 MHz max
-    pub fn new(spi: SPI, cs: CS) -> Self {
+    pub fn new(spi: SPI, cs: CS, daisy_chain: u8) -> Self {
         L6470Connector {
             spi_bus: spi,
             cs,
-            daisy_chain: 2,
+            daisy_chain,
         }
     }
 
