@@ -272,7 +272,7 @@ where
 
     pub fn read_byte(&mut self, motors: Motors) -> u8 {
         self.cs.set_low();
-        let mut buf = [0, 8]; // 0 is NOP command
+        let mut buf = [0; 8]; // 0 is NOP command
 
         if self.daisy_chain >= 8 {
             unimplemented!();
