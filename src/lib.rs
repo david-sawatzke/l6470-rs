@@ -6,6 +6,7 @@
 use bitflags::bitflags;
 use byteorder::{BigEndian, ByteOrder};
 use embedded_hal;
+use embedded_hal::blocking::delay;
 use embedded_hal::spi::{Mode, Phase, Polarity};
 use nb::block;
 
@@ -62,13 +63,17 @@ where
     SPI: embedded_hal::spi::FullDuplex<u8, Error = E>,
     CS: embedded_hal::digital::OutputPin,
 {
-    pub fn init(&mut self) {
+    pub fn init<DELAY>(&mut self, delay: &mut DELAY)
+    where
+        DELAY: delay::DelayMs<u16>,
+    {
         self.resync_com();
-        self.send_reset(Motors::all());
-        self.write_register(Motors::all(), &register::ALARM_EN, 0b1000_0011 as u32);
-        self.get_status(Motors::all());
-        self.set_step_mode(Motors::all(), StepMode::DIV16);
-        self.init_speed();
+        self.send_reset(delay, Motors::all());
+
+        // self.write_register(Motors::all(), &register::ALARM_EN, 0b1000_0011 as u32);
+        // self.get_status(Motors::all());
+        // self.set_step_mode(Motors::all(), StepMode::DIV16);
+        // self.init_speed();
     }
 
     pub fn init_speed(&mut self) {
@@ -201,7 +206,7 @@ where
     }
 
     pub fn send_go_until(&mut self, motors: Motors, dir: Direction, speed: u32) {
-        let mut command = 0b10001010;
+        let mut command = 0b1000_1010;
 
         if dir == Direction::CW {
             command += 1;
@@ -218,9 +223,12 @@ where
         self.send_byte(motors, buf[3]);
     }
 
-    pub fn send_reset(&mut self, motors: Motors) {
+    pub fn send_reset<DELAY>(&mut self, delay: &mut DELAY, motors: Motors)
+    where
+        DELAY: delay::DelayMs<u16>,
+    {
         self.send_byte(motors, 0xC0);
-        // TODO 1 second delay
+        delay.delay_ms(1_000 as u16);
     }
 
     pub fn resync_com(&mut self) {
@@ -239,13 +247,13 @@ where
     /// # Side effect:
     ///
     /// Reset ABS_POS to 0
-    fn set_step_mode(&mut self, motors: Motors, step_mode: StepMode) {
+    pub fn set_step_mode(&mut self, motors: Motors, step_mode: StepMode) {
         self.write_register(motors, &register::STEP_MODE, step_mode.bits as u32);
 
         // From the datasheet:
         // Warning: Every time STEP_SEL is changed, the value in the ABS_POS
         //register loses meaning and should be reset.
-        //self.write_register(motors, &register::ABS_POS, 0 as u32);
+        self.write_register(motors, &register::ABS_POS, 0 as u32);
     }
 
     pub fn send_byte(&mut self, motors: Motors, byte: u8) {
