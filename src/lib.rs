@@ -4,11 +4,9 @@
 #![no_std]
 
 use bitflags::bitflags;
-use byteorder::{BigEndian, ByteOrder};
 use embedded_hal;
 use embedded_hal::blocking::delay;
 use embedded_hal::spi::{Mode, Phase, Polarity};
-use nb::block;
 
 pub mod register;
 
@@ -123,9 +121,7 @@ where
         }
         self.send_byte(motors, command);
 
-        let mut buf = [0; 4];
-        BigEndian::write_u32(&mut buf, step);
-
+        let buf = step.to_be_bytes();
         // Send the three LSB
         self.send_byte(motors, buf[1]);
         self.send_byte(motors, buf[2]);
@@ -137,8 +133,7 @@ where
 
         self.send_byte(motors, command);
 
-        let mut buf = [0; 4];
-        BigEndian::write_u32(&mut buf, pos);
+        let buf = pos.to_be_bytes();
 
         // Send the three LSB
         self.send_byte(motors, buf[1]);
@@ -179,8 +174,7 @@ where
 
         self.send_byte(motors, command);
 
-        let mut buf = [0; 4];
-        BigEndian::write_u32(&mut buf, pos);
+        let buf = pos.to_be_bytes();
 
         // Send the three LSB
         self.send_byte(motors, buf[1]);
@@ -196,8 +190,7 @@ where
         }
         self.send_byte(motors, command);
 
-        let mut buf = [0; 4];
-        BigEndian::write_u32(&mut buf, speed);
+        let buf = speed.to_be_bytes();
 
         // Send the three LSB
         self.send_byte(motors, buf[1]);
@@ -214,8 +207,7 @@ where
 
         self.send_byte(motors, command);
 
-        let mut buf = [0; 4];
-        BigEndian::write_u32(&mut buf, speed);
+        let buf = speed.to_be_bytes();
 
         // Send the three LSB
         self.send_byte(motors, buf[1]);
@@ -304,9 +296,7 @@ where
     pub fn write_register(&mut self, motors: Motors, reg: &Register, value: u32) {
         self.send_byte(motors, 0x00 | reg.address);
 
-        let mut buf = [0; 4];
-
-        BigEndian::write_u32(&mut buf, value);
+        let buf = value.to_be_bytes();
 
         // We check len_bit to choose between 1, 2 and 3 bytes register
         let buf_size = match reg.len_bit {
@@ -365,7 +355,7 @@ where
             }
             _ => unreachable!(),
         };
-        BigEndian::read_u32(&mut buf)
+        u32::from_be_bytes(buf)
     }
 
     /*
