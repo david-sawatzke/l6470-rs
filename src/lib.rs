@@ -60,7 +60,7 @@ bitflags! {
 
 impl<SPI, E, CS> L6470<SPI, CS>
 where
-    SPI: embedded_hal::spi::FullDuplex<u8, Error = E>,
+    SPI: embedded_hal::blocking::spi::Transfer<u8, Error = E>,
     CS: embedded_hal::digital::OutputPin,
 {
     pub fn init<DELAY>(&mut self, delay: &mut DELAY)
@@ -374,10 +374,7 @@ where
     }*/
 
     pub fn transfer(&mut self, input: &mut [u8]) -> Result<(), E> {
-        for b in input.iter_mut() {
-            block!(self.spi.send(*b))?;
-            *b = block!(self.spi.read())?;
-        }
+        self.spi.transfer(input)?;
         // TODO 1 ms delay
         // println!("tx: {:02X?}, rx: {:02X?}", input, rx_buf);
         Ok(())
@@ -393,7 +390,7 @@ pub struct L6470Connector<SPI, CS> {
 
 impl<SPI, CS> L6470Connector<SPI, CS>
 where
-    SPI: embedded_hal::spi::FullDuplex<u8>,
+    SPI: embedded_hal::blocking::spi::Transfer<u8>,
     CS: embedded_hal::digital::OutputPin,
 {
     /// Returns a new connectors
