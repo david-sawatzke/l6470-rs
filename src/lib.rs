@@ -59,7 +59,8 @@ bitflags! {
 impl<SPI, E, CS> L6470<SPI, CS>
 where
     SPI: embedded_hal::blocking::spi::Transfer<u8, Error = E>,
-    CS: embedded_hal::digital::OutputPin,
+    CS: embedded_hal::digital::v2::OutputPin,
+    <CS as embedded_hal::digital::v2::OutputPin>::Error: core::fmt::Debug,
 {
     pub fn init<DELAY>(&mut self, delay: &mut DELAY)
     where
@@ -249,7 +250,7 @@ where
     }
 
     pub fn send_byte(&mut self, motors: Motors, byte: u8) {
-        self.cs.set_low();
+        self.cs.set_low().unwrap();
         let mut buf = [0, 8];
 
         if self.daisy_chain >= 8 {
@@ -267,11 +268,11 @@ where
         self.transfer(&mut buf[0..self.daisy_chain as usize])
             .map_err(|_| ())
             .unwrap();
-        self.cs.set_high();
+        self.cs.set_high().unwrap();
     }
 
     pub fn read_byte(&mut self, motors: Motors) -> u8 {
-        self.cs.set_low();
+        self.cs.set_low().unwrap();
         let mut buf = [0; 8]; // 0 is NOP command
 
         if self.daisy_chain >= 8 {
@@ -289,7 +290,7 @@ where
                 break;
             }
         }
-        self.cs.set_high();
+        self.cs.set_high().unwrap();
         data
     }
 
@@ -381,7 +382,8 @@ pub struct L6470Connector<SPI, CS> {
 impl<SPI, CS> L6470Connector<SPI, CS>
 where
     SPI: embedded_hal::blocking::spi::Transfer<u8>,
-    CS: embedded_hal::digital::OutputPin,
+    CS: embedded_hal::digital::v2::OutputPin,
+    <CS as embedded_hal::digital::v2::OutputPin>::Error: core::fmt::Debug,
 {
     /// Returns a new connectors
     ///
@@ -395,7 +397,7 @@ where
     }
 
     pub fn build(mut self) -> Result<L6470<SPI, CS>, ()> {
-        self.cs.set_high();
+        self.cs.set_high().unwrap();
         Ok(L6470 {
             spi: self.spi_bus,
             cs: self.cs,

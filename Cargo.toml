@@ -16,4 +16,4 @@ repository = "https://github.com/david-sawatzke/l6470-rs"
 
 [dependencies]
 bitflags = "1.0.0"
-embedded-hal = "0.2.2"
+embedded-hal = "0.2.4"
