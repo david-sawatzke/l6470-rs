@@ -31,7 +31,7 @@ bitflags! {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Direction {
     CW,
     CCW,
