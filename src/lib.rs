@@ -129,7 +129,7 @@ where
         self.send_byte(motors, buf[3]);
     }
 
-    pub fn send_goto(&mut self, motors: Motors, pos: u32) {
+    pub fn send_goto(&mut self, motors: Motors, pos: i32) {
         let command = 0x60u8;
 
         self.send_byte(motors, command);
