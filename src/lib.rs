@@ -166,7 +166,7 @@ where
         self.send_byte(motors, command);
     }
 
-    pub fn send_goto_dir(&mut self, motors: Motors, dir: Direction, pos: u32) {
+    pub fn send_goto_dir(&mut self, motors: Motors, dir: Direction, pos: i32) {
         let mut command = 0x68u8;
 
         if dir == Direction::CW {
